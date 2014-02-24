@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+
+var fs = require('fs')
+var path = require('path')
+var url = require('url')
+var commander = require('commander')
+var colorful = require('colorful')
+var common = require('totoro-common')
+
+var pkg = require('../package')
+
+commander
+  .description(pkg.description)
+  .option('-v, --version', 'output the version number')
+  .option('-d, --debug', 'show debug log')
+  .option('-H, --host [s]', 'http server host')
+  .option('-P, --port [n]', 'http server port')
+  .option('-p, --path [s]', 'path of file stores ci info')
+  .on('version', function() {
+    console.log()
+    console.log('  ' + colorful.cyan(pkg.version))
+    console.log()
+    process.exit(0)
+  }).helpInformation = helpInfo
+
+
+commander.parse(process.argv)
+
+var cfg = common.getCfg(commander)
+var defCfg = {
+  host: common.getExternalIpAddress(),
+  port: 9996,
+  path: 'ci-list'
+}
+cfg = common.mix(cfg, defCfg)
+
+
+var ciListStream = fs.createWriteStream(cfg.path, {
+  flags: 'a',
+  encoding: 'utf8'
+})
+var ciListContent = fs.readFileSync(cfg.path, {
+  flags: 'r',
+  encodeing: 'utf8'
+})
+.toString()
+.split('\n')
+.filter(function(item) {
+  return item
+})
+
+
+var express = require('express');
+var app = express();
+
+app.get('/', function(req, res){
+  var query = url.parse(req.url, true).query
+  var p = query.path
+
+  if (p) {
+    if (ciListContent.indexOf(p) !== -1) {
+      res.send({
+        isSucc: 0,
+        msg: 'Path<' + p + '> already existed.'
+      })
+    } else {
+      ciListContent.push(p)
+      ciListStream.write(p + '\n')
+      console.log('Add ci config<' + p + '>.')
+      res.send({isSucc: 1})
+    }
+  } else {
+    res.send(ciListContent)
+  }
+});
+
+app.listen(cfg.port, cfg.host, function(socket) {
+  console.log('Start totoro ci server.', '<' + cfg.host + ':' + cfg.port + '>')
+})
+
+
+
+
+function helpInfo() {
+  var commandHelp = ''
+  if (this.commands.length) {
+    commandHelp = '\n' +
+      colorful.green('  Commands:') +
+      '    ' + this.commandHelp().replace(/\n  Commands:\n/gm, '')
+  }
+
+  return [
+    '',
+    colorful.cyan('  ' + this.description()),
+    '',
+    colorful.green('  Usage:'),
+    '    ' + this._name + ' ' + this.usage(),
+    commandHelp,
+    colorful.green('  Options:'),
+    '' + this.optionHelp().replace(/^/gm, '    '),
+    '',
+    colorful.green('  More Info:'),
+    '    ' + colorful.underline(pkg.homepage),
+    '',
+    ''
+  ].join('\n')
+}
+
