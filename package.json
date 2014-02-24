@@ -1,0 +1,26 @@
+{
+  "name": "totoro-ci",
+  "version": "0.0.1",
+  "description": "Continuous integration of totoro.",
+  "homepage": "https://github.com/totorojs/totoro-ci",
+  "keywords": [
+    "totoro",
+    "continuous integration",
+    "front end test tool"
+  ],
+  "author": "fool2fish <fool2fish@gmail.com>",
+  "contributors": [
+    "kangpangpang <kangpangpang@gmail.com>"
+  ],
+  "dependencies": {
+    "commander": "1.2.0",
+    "colorful": "2.1.0",
+    "totoro-common": "0.1.5",
+    "express": "3.1.0",
+    "tracer": "0.5.1"
+  },
+  "bin": {
+    "tci": "./bin/tci"
+  },
+  "preferGlobal": true
+}
